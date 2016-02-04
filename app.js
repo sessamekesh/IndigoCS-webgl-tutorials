@@ -34,6 +34,7 @@ var InitDemo = function () {
 
 var RunDemo = function (vertexShaderText, fragmentShaderText, SusanImage, SusanModel) {
 	console.log('This is working');
+	model = SusanModel;
 
 	var canvas = document.getElementById('game-surface');
 	gl = canvas.getContext('webgl');
@@ -95,6 +96,7 @@ var RunDemo = function (vertexShaderText, fragmentShaderText, SusanImage, SusanM
 	var susanVertices = SusanModel.meshes[0].vertices;
 	var susanIndices = [].concat.apply([], SusanModel.meshes[0].faces);
 	var susanTexCoords = SusanModel.meshes[0].texturecoords[0];
+	var susanNormals = SusanModel.meshes[0].normals;
 
 	var susanPosVertexBufferObject = gl.createBuffer();
 	gl.bindBuffer(gl.ARRAY_BUFFER, susanPosVertexBufferObject);
@@ -107,6 +109,10 @@ var RunDemo = function (vertexShaderText, fragmentShaderText, SusanImage, SusanM
 	var susanIndexBufferObject = gl.createBuffer();
 	gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, susanIndexBufferObject);
 	gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(susanIndices), gl.STATIC_DRAW);
+
+	var susanNormalBufferObject = gl.createBuffer();
+	gl.bindBuffer(gl.ARRAY_BUFFER, susanNormalBufferObject);
+	gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(susanNormals), gl.STATIC_DRAW);
 
 	gl.bindBuffer(gl.ARRAY_BUFFER, susanPosVertexBufferObject);
 	var positionAttribLocation = gl.getAttribLocation(program, 'vertPosition');
@@ -131,6 +137,17 @@ var RunDemo = function (vertexShaderText, fragmentShaderText, SusanImage, SusanM
 		0
 	);
 	gl.enableVertexAttribArray(texCoordAttribLocation);
+
+	gl.bindBuffer(gl.ARRAY_BUFFER, susanNormalBufferObject);
+	var normalAttribLocation = gl.getAttribLocation(program, 'vertNormal');
+	gl.vertexAttribPointer(
+		normalAttribLocation,
+		3, gl.FLOAT,
+		gl.TRUE,
+		3 * Float32Array.BYTES_PER_ELEMENT,
+		0
+	);
+	gl.enableVertexAttribArray(normalAttribLocation);
 
 	//
 	// Create texture
@@ -169,6 +186,19 @@ var RunDemo = function (vertexShaderText, fragmentShaderText, SusanImage, SusanM
 
 	var xRotationMatrix = new Float32Array(16);
 	var yRotationMatrix = new Float32Array(16);
+
+	//
+	// Lighting information
+	//
+	gl.useProgram(program);
+
+	var ambientUniformLocation = gl.getUniformLocation(program, 'ambientLightIntensity');
+	var sunlightDirUniformLocation = gl.getUniformLocation(program, 'sun.direction');
+	var sunlightIntUniformLocation = gl.getUniformLocation(program, 'sun.color');
+
+	gl.uniform3f(ambientUniformLocation, 0.2, 0.2, 0.2);
+	gl.uniform3f(sunlightDirUniformLocation, 3.0, 4.0, -2.0);
+	gl.uniform3f(sunlightIntUniformLocation, 0.9, 0.9, 0.9);
 
 	//
 	// Main render loop
