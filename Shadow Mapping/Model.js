@@ -22,6 +22,7 @@ var Model = function (gl, vertices, indices, normals, color) {
 	gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, null);
 };
 
+// TODO KAM: Make this a function, not a class. Not using it as a class.
 var ShaderProgram = function (gl, vsText, fsText) {
 	var vs = gl.createShader(gl.VERTEX_SHADER);
 	gl.shaderSource(vs, vsText);
@@ -73,15 +74,6 @@ var FPSCamera = function (position, lookAt, up) {
 	vec3.normalize(this.up, this.up);
 };
 
-FPSCamera.prototype._realign = function() {
-	vec3.cross(this.right, this.fwd, this.up);
-	vec3.cross(this.up, this.right, this.fwd);
-
-	vec3.normalize(this.fwd, this.fwd);
-	vec3.normalize(this.right, this.right);
-	vec3.normalize(this.up, this.up);
-};
-
 FPSCamera.prototype.GetViewMatrix = function () {
 	var tr = mat4.create();
 	var lookAt = vec3.create();
@@ -102,6 +94,15 @@ FPSCamera.prototype.rotateRight = function (rad) {
 	mat4.rotate(rightMatrix, rightMatrix, rad, vec3.fromValues(0, 0, 1));
 	vec3.transformMat4(this.fwd, this.fwd, rightMatrix);
 	this._realign();
+};
+
+FPSCamera.prototype._realign = function() {
+	vec3.cross(this.right, this.fwd, this.up);
+	vec3.cross(this.up, this.right, this.fwd);
+
+	vec3.normalize(this.fwd, this.fwd);
+	vec3.normalize(this.right, this.right);
+	vec3.normalize(this.up, this.up);
 };
 
 FPSCamera.prototype.moveForward = function (dist) {

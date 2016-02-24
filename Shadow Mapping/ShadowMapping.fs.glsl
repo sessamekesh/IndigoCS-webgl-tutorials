@@ -23,7 +23,7 @@ void main()
 
 	float lightIntensity = 0.6;
 
-	if ((ssSqMg + 0.8) > wsSqMg) {
+	if ((ssSqMg + 0.13) > wsSqMg) {
 		lightIntensity = lightIntensity + (1.0 - lightIntensity) * max(dot(fNorm, normLightDir), 0.0);
 	}
 

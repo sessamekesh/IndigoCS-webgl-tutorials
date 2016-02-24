@@ -1,14 +1,8 @@
 'use strict';
 
-function getParameterByName(name, url) {
-    if (!url) url = window.location.href;
-    name = name.replace(/[\[\]]/g, "\\$&");
-    var regex = new RegExp("[?&]" + name + "(=([^&#]*)|&|#|$)"),
-        results = regex.exec(url);
-    if (!results) return null;
-    if (!results[2]) return '';
-    return decodeURIComponent(results[2].replace(/\+/g, " "));
-}
+// TODO KAM: Implement two 'levels', this scene and one that is
+//  generated just from hand as a loading screen.
+// Loading screen: Bouncing cube
 
 var ss = getParameterByName('ss') || 512;
 
@@ -97,6 +91,7 @@ LightMapDemo.prototype.Load = function (cb) {
 			cb('Failed to load all models!');
 			return;
 		}
+		// TODO KAM: Remove all BillboardMesh things
 		me.BillboardMesh = {
 			vbo: me.gl.createBuffer(),
 			uvbo: me.gl.createBuffer()
@@ -127,7 +122,7 @@ LightMapDemo.prototype.Load = function (cb) {
 		me.gl.bindRenderbuffer(me.gl.RENDERBUFFER, me.cubeMapDepthBuffer);
 		me.gl.renderbufferStorage(me.gl.RENDERBUFFER, me.gl.DEPTH_COMPONENT16, ss, ss);
 
-		me.gl.bindTexture(me.gl.TEXTURE_2D, null);
+		me.gl.bindTexture(me.gl.TEXTURE_CUBE_MAP, null);
 		me.gl.bindRenderbuffer(me.gl.RENDERBUFFER, null);
 		me.gl.bindFramebuffer(me.gl.FRAMEBUFFER, null);
 
@@ -150,6 +145,7 @@ LightMapDemo.prototype.Load = function (cb) {
 			me.DepthProgram = me.DepthProgram.program;
 		}
 
+		// TODO KAM: Remove all BillboardProgram stuff
 		me.BillboardProgram = new ShaderProgram(me.gl, loadObject.ShaderCode.BBVSText, loadObject.ShaderCode.BBFSText);
 		if (me.BillboardProgram.error) {
 			cb(me.BillboardProgram.error);
@@ -221,16 +217,6 @@ LightMapDemo.prototype.Load = function (cb) {
 		};
 
 		// Shadow Map Cameras
-		var shadowMapTransforms = [
-			vec3.fromValues( 1, 0, 0),   // Positive X
-			vec3.fromValues(-1, 0, 0),   // Negative X
-			
-			vec3.fromValues(0,  1, 0),    // Positive Y
-			vec3.fromValues(0, -1, 0),    // Negative Y
-			
-			vec3.fromValues(0, 0,  1), // Positive Z
-			vec3.fromValues(0, 0, -1) // Negative Z
-		];
 		me.shadowCameras = [
 			// Positive X
 			new FPSCamera(
@@ -260,18 +246,18 @@ LightMapDemo.prototype.Load = function (cb) {
 			new FPSCamera(
 				me.lightPosition,
 				vec3.add(vec3.create(), me.lightPosition, vec3.fromValues(0, 0, 1)),
-				vec3.fromValues(0, -1, 0) // TODO KAM: Not sure this is right
+				vec3.fromValues(0, -1, 0)
 			),
 			// Negative Z
 			new FPSCamera(
 				me.lightPosition,
 				vec3.add(vec3.create(), me.lightPosition, vec3.fromValues(0, 0, -1)),
-				vec3.fromValues(0, -1, 0) // TODO KAM: Not sure this is right
+				vec3.fromValues(0, -1, 0)
 			),
 		];
 		me.shadowProjMatrix = mat4.create();
 		me.shadowNearClip = 0.01;
-		me.shadowFarClip = 25.0;
+		me.shadowFarClip = 15.0;
 		mat4.perspective(me.shadowProjMatrix, glMatrix.toRadian(90), 1.0, me.shadowNearClip, me.shadowFarClip);
 
 		me.lightMovementAngle = 0.0;
@@ -280,6 +266,7 @@ LightMapDemo.prototype.Load = function (cb) {
 	});
 };
 
+// TODO KAM: Pay more attention to Unload!
 LightMapDemo.prototype.Unload = function () {
 	me.MonkeyMesh = null;
 	me.TableMesh = null;
@@ -318,6 +305,7 @@ LightMapDemo.prototype.Begin = function () {
 		previousframe = currentframe;
 		frames.push(dt);
 		if (lastpoll + 750 < currentframe) {
+			frames = frames.slice(0, 350);
 			lastpoll = currentframe;
 			avg = 0;
 			for (i = 0; i < frames.length; i++) {
@@ -326,7 +314,6 @@ LightMapDemo.prototype.Begin = function () {
 			avg /= frames.length;
 			document.title = 1000 / avg + ' fps';
 		}
-		frames = frames.slice(0, 350);
 
 		me.gl.clearColor(0.0, 0.0, 0.0, 1.0);
 		me.gl.clear(me.gl.COLOR_BUFFER_BIT | me.gl.DEPTH_BUFFER_BIT);
