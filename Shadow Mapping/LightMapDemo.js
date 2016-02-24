@@ -66,7 +66,7 @@ LightMapDemo.prototype.Load = function (cb) {
 					mat4.scale(me.SofaMesh.world, me.SofaMesh.world, vec3.fromValues(0.362, 0.362, 0.362));
 					break;
 				case 'LightBulbMesh':
-					me.lightPosition = vec3.fromValues(0, 0, 2.98971);
+					me.lightPosition = vec3.fromValues(0, 0, 2.78971);
 
 					me.LightMesh = new Model(me.gl, mesh.vertices, [].concat.apply([], mesh.faces), mesh.normals, vec4.fromValues(1, 1, 1, 1));
 					mat4.translate(me.LightMesh.world, me.LightMesh.world, me.lightPosition);
@@ -96,31 +96,14 @@ LightMapDemo.prototype.Load = function (cb) {
 		//
 		// Create Framebuffers and Textures
 		//
-		me.cubeMapTextures = [
-			me.gl.createTexture(),
-			me.gl.createTexture(),
-			me.gl.createTexture(),
-			me.gl.createTexture(),
-			me.gl.createTexture(),
-			me.gl.createTexture()
-		];
 		me.shadowMapCube = me.gl.createTexture();
 		me.gl.bindTexture(me.gl.TEXTURE_CUBE_MAP, me.shadowMapCube);
 		me.gl.texParameteri(me.gl.TEXTURE_CUBE_MAP, me.gl.TEXTURE_MIN_FILTER, me.gl.LINEAR);
 		me.gl.texParameteri(me.gl.TEXTURE_CUBE_MAP, me.gl.TEXTURE_MAG_FILTER, me.gl.LINEAR);
-		me.gl.texParameteri(me.gl.TEXTURE_CUBE_MAP, me.gl.TEXTURE_WRAP_S, me.gl.CLAMP_TO_EDGE);
-		me.gl.texParameteri(me.gl.TEXTURE_CUBE_MAP, me.gl.TEXTURE_WRAP_T, me.gl.CLAMP_TO_EDGE);
+		me.gl.texParameteri(me.gl.TEXTURE_CUBE_MAP, me.gl.TEXTURE_WRAP_S, me.gl.MIRRORED_REPEAT);
+		me.gl.texParameteri(me.gl.TEXTURE_CUBE_MAP, me.gl.TEXTURE_WRAP_T, me.gl.MIRRORED_REPEAT);
 		for (var i = 0; i < 6; i++) {
 			me.gl.texImage2D(me.gl.TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, me.gl.RGBA, 1024, 1024, 0, me.gl.RGBA, me.gl.UNSIGNED_BYTE, null);
-		}
-
-		for (var i = 0; i < me.cubeMapTextures.length; i++) {
-			me.gl.bindTexture(me.gl.TEXTURE_2D, me.cubeMapTextures[i]);
-			me.gl.texParameteri(me.gl.TEXTURE_2D, me.gl.TEXTURE_MIN_FILTER, me.gl.LINEAR_MIPMAP_NEAREST);
-			me.gl.texParameteri(me.gl.TEXTURE_2D, me.gl.TEXTURE_MAG_FILTER, me.gl.LINEAR);
-
-			me.gl.texImage2D(me.gl.TEXTURE_2D, 0, me.gl.RGBA, 1024, 1024, 0, me.gl.RGBA, me.gl.UNSIGNED_BYTE, null);
-			me.gl.generateMipmap(me.gl.TEXTURE_2D);
 		}
 
 		me.cubeMapFramebuffer = me.gl.createFramebuffer();
@@ -170,6 +153,7 @@ LightMapDemo.prototype.Load = function (cb) {
 			mProj: me.gl.getUniformLocation(me.ShaderProgram, 'mProj'),
 
 			meshColor: me.gl.getUniformLocation(me.ShaderProgram, 'meshColor'),
+			shadowClipNearFar: me.gl.getUniformLocation(me.ShaderProgram, 'shadowClipNearFar'),
 			pointShadowTexture: me.gl.getUniformLocation(me.ShaderProgram, 'pointShadowTexture'),
 			pointLightPosition: me.gl.getUniformLocation(me.ShaderProgram, 'pointLightPosition')
 		};
@@ -181,7 +165,10 @@ LightMapDemo.prototype.Load = function (cb) {
 		me.DepthProgram.uniforms = {
 			mWorld: me.gl.getUniformLocation(me.DepthProgram, 'mWorld'),
 			mView: me.gl.getUniformLocation(me.DepthProgram, 'mView'),
-			mProj: me.gl.getUniformLocation(me.DepthProgram, 'mProj')
+			mProj: me.gl.getUniformLocation(me.DepthProgram, 'mProj'),
+
+			pointLightPosition: me.gl.getUniformLocation(me.DepthProgram, 'pointLightPosition'),
+			shadowClipNearFar: me.gl.getUniformLocation(me.DepthProgram, 'shadowClipNearFar')
 		};
 		me.DepthProgram.attribs = {
 			vPos: me.gl.getAttribLocation(me.DepthProgram, 'vPos'),
@@ -269,7 +256,9 @@ LightMapDemo.prototype.Load = function (cb) {
 			),
 		];
 		me.shadowProjMatrix = mat4.create();
-		mat4.perspective(me.shadowProjMatrix, glMatrix.toRadian(90), 1.0, 0.35, 9.0);
+		me.shadowNearClip = 0.35;
+		me.shadowFarClip = 75.0;
+		mat4.perspective(me.shadowProjMatrix, glMatrix.toRadian(90), 1.0, me.shadowNearClip, me.shadowFarClip);
 
 		cb();
 	});
@@ -302,9 +291,26 @@ LightMapDemo.prototype.Begin = function () {
 	// Begin game loop
 	// 
 	var previousframe = performance.now();
+	var lastpoll = previousframe;
+	var dt = 0;
+	var avg = 0;
+	var i = 0;
+	var frames = [];
 	var loop = function (currentframe) {
-		me._Update(currentframe - previousframe);
+		dt = currentframe - previousframe;
+		me._Update(dt);
 		previousframe = currentframe;
+		frames.push(dt);
+		if (lastpoll + 750 < currentframe) {
+			lastpoll = currentframe;
+			avg = 0;
+			for (i = 0; i < frames.length; i++) {
+				avg += frames[i];
+			}
+			avg /= frames.length;
+			document.title = 1000 / avg + ' fps';
+		}
+		frames = frames.slice(0, 350);
 
 		me.gl.clearColor(0.0, 0.0, 0.0, 1.0);
 		me.gl.clear(me.gl.COLOR_BUFFER_BIT | me.gl.DEPTH_BUFFER_BIT);
@@ -380,6 +386,8 @@ LightMapDemo.prototype._RenderShadowMap = function () {
 	var gl = this.gl;
 
 	gl.useProgram(this.DepthProgram);
+	gl.uniform2f(this.DepthProgram.uniforms.shadowClipNearFar, this.shadowNearClip, this.shadowFarClip);
+	gl.uniform3fv(this.DepthProgram.uniforms.pointLightPosition, mat4.getTranslation(vec3.create(), this.LightMesh.world));
 	gl.uniformMatrix4fv(this.DepthProgram.uniforms.mProj, gl.FALSE, this.shadowProjMatrix);
 
 	gl.enable(gl.DEPTH_TEST);
@@ -491,6 +499,7 @@ LightMapDemo.prototype._Render = function () {
 	gl.useProgram(this.ShaderProgram);
 	gl.uniformMatrix4fv(this.ShaderProgram.uniforms.mProj, gl.FALSE, this.perFrameUniforms.mProj);
 	gl.uniformMatrix4fv(this.ShaderProgram.uniforms.mView, gl.FALSE, this.camera.GetViewMatrix());
+	gl.uniform2f(this.ShaderProgram.uniforms.shadowClipNearFar, this.shadowNearClip, this.shadowFarClip);
 	gl.uniform3fv(this.ShaderProgram.uniforms.pointLightPosition, mat4.getTranslation([0, 0, 0], this.LightMesh.world));
 	gl.uniform1i(this.ShaderProgram.uniforms.pointShadowTexture, 0);
 	gl.activeTexture(gl.TEXTURE0);
