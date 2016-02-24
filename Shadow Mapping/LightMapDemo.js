@@ -265,11 +265,11 @@ LightMapDemo.prototype.Load = function (cb) {
 			new FPSCamera(
 				me.lightPosition,
 				vec3.add(vec3.create(), me.lightPosition, vec3.fromValues(0, 0, -1)),
-				vec3.fromValues(0, 1, 0) // TODO KAM: Not sure this is right
+				vec3.fromValues(0, -1, 0) // TODO KAM: Not sure this is right
 			),
 		];
 		me.shadowProjMatrix = mat4.create();
-		mat4.perspective(me.shadowProjMatrix, glMatrix.toRadian(90), 16 / 9, 0.35, 12.0);
+		mat4.perspective(me.shadowProjMatrix, glMatrix.toRadian(90), 1.0, 0.35, 9.0);
 
 		cb();
 	});
