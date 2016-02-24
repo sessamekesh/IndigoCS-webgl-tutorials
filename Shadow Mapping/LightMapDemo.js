@@ -1,5 +1,17 @@
 'use strict';
 
+function getParameterByName(name, url) {
+    if (!url) url = window.location.href;
+    name = name.replace(/[\[\]]/g, "\\$&");
+    var regex = new RegExp("[?&]" + name + "(=([^&#]*)|&|#|$)"),
+        results = regex.exec(url);
+    if (!results) return null;
+    if (!results[2]) return '';
+    return decodeURIComponent(results[2].replace(/\+/g, " "));
+}
+
+var ss = getParameterByName('ss') || 512;
+
 //
 // Constructor
 //
@@ -22,11 +34,12 @@ LightMapDemo.prototype.Load = function (cb) {
 		},
 		ShaderCode: function (callback) {
 			async.map({
-				'VSText': '/ShadowMapping.vs.glsl',
-				'FSText': '/ShadowMapping.fs.glsl',
-				'DepthFSText': '/DepthBufferView.fs.glsl',
-				'BBVSText': '/BillboardDraw.vs.glsl',
-				'BBFSText': '/BillboardDraw.fs.glsl'
+				'VSText': 'ShadowMapping.vs.glsl',
+				'FSText': 'ShadowMapping.fs.glsl',
+				'DepthVSText': 'DepthBufferView.vs.glsl',
+				'DepthFSText': 'DepthBufferView.fs.glsl',
+				'BBVSText': 'BillboardDraw.vs.glsl',
+				'BBFSText': 'BillboardDraw.fs.glsl'
 			}, LoadTextResource, callback);
 		}
 	}, function (loadErrors, loadObject) {
@@ -35,6 +48,7 @@ LightMapDemo.prototype.Load = function (cb) {
 			return;
 		}
 
+		me.LoadedObject = loadObject;
 		//
 		// Create model objects
 		//
@@ -50,13 +64,13 @@ LightMapDemo.prototype.Load = function (cb) {
 						glMatrix.toRadian(94.87)
 					);
 					mat4.rotate(me.MonkeyMesh.world, me.MonkeyMesh.world, glMatrix.toRadian(94.87), vec3.fromValues(0, 0, -1));
-					mat4.translate(me.MonkeyMesh.world, me.MonkeyMesh.world, vec3.fromValues(2.079, -0.985, 1.757));
+					mat4.translate(me.MonkeyMesh.world, me.MonkeyMesh.world, vec3.fromValues(1.39, 1.285, 1.757));
 					mat4.scale(me.MonkeyMesh.world, me.MonkeyMesh.world, vec3.fromValues(0.408, 0.408, 0.408));
 					break;
 				case 'TableMesh':
 					me.TableMesh = new Model(me.gl, mesh.vertices, [].concat.apply([], mesh.faces), mesh.normals, vec4.fromValues(1, 0, 1, 1));
 					mat4.rotate(me.TableMesh.world, me.TableMesh.world, glMatrix.toRadian(0), vec3.fromValues(0, 1, 0));
-					mat4.translate(me.TableMesh.world, me.TableMesh.world, vec3.fromValues(1.57116, -0.79374, 0.49672));
+					mat4.translate(me.TableMesh.world, me.TableMesh.world, vec3.fromValues(1.3116, -1.79374, 0.49672));
 					mat4.scale(me.TableMesh.world, me.TableMesh.world, vec3.fromValues(1, 1, 1));
 					break;
 				case 'SofaMesh':
@@ -68,13 +82,13 @@ LightMapDemo.prototype.Load = function (cb) {
 				case 'LightBulbMesh':
 					me.lightPosition = vec3.fromValues(0, 0, 2.78971);
 
-					me.LightMesh = new Model(me.gl, mesh.vertices, [].concat.apply([], mesh.faces), mesh.normals, vec4.fromValues(1, 1, 1, 1));
+					me.LightMesh = new Model(me.gl, mesh.vertices, [].concat.apply([], mesh.faces), mesh.normals, vec4.fromValues(3, 3, 3, 1));
 					mat4.translate(me.LightMesh.world, me.LightMesh.world, me.lightPosition);
 					mat4.scale(me.LightMesh.world, me.LightMesh.world, vec3.fromValues(0.405, 0.405, 0.405));
 					break;
 				case 'WallsMesh':
 					me.WallsMesh = new Model(me.gl, mesh.vertices, [].concat.apply([], mesh.faces), mesh.normals, vec4.fromValues(0.3, 0.3, 0.3, 1));
-					mat4.translate(me.MonkeyMesh.world, me.MonkeyMesh.world, vec3.fromValues(0, 0, 0));
+					mat4.translate(me.WallsMesh.world, me.WallsMesh.world, vec3.fromValues(0, 0, 0));
 					mat4.scale(me.WallsMesh.world, me.WallsMesh.world, vec3.fromValues(5, 5, 1));
 					break;
 			}
@@ -103,7 +117,7 @@ LightMapDemo.prototype.Load = function (cb) {
 		me.gl.texParameteri(me.gl.TEXTURE_CUBE_MAP, me.gl.TEXTURE_WRAP_S, me.gl.MIRRORED_REPEAT);
 		me.gl.texParameteri(me.gl.TEXTURE_CUBE_MAP, me.gl.TEXTURE_WRAP_T, me.gl.MIRRORED_REPEAT);
 		for (var i = 0; i < 6; i++) {
-			me.gl.texImage2D(me.gl.TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, me.gl.RGBA, 1024, 1024, 0, me.gl.RGBA, me.gl.UNSIGNED_BYTE, null);
+			me.gl.texImage2D(me.gl.TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, me.gl.RGBA, ss, ss, 0, me.gl.RGBA, me.gl.UNSIGNED_BYTE, null);
 		}
 
 		me.cubeMapFramebuffer = me.gl.createFramebuffer();
@@ -111,7 +125,7 @@ LightMapDemo.prototype.Load = function (cb) {
 
 		me.cubeMapDepthBuffer = me.gl.createRenderbuffer();
 		me.gl.bindRenderbuffer(me.gl.RENDERBUFFER, me.cubeMapDepthBuffer);
-		me.gl.renderbufferStorage(me.gl.RENDERBUFFER, me.gl.DEPTH_COMPONENT16, 1024, 1024);
+		me.gl.renderbufferStorage(me.gl.RENDERBUFFER, me.gl.DEPTH_COMPONENT16, ss, ss);
 
 		me.gl.bindTexture(me.gl.TEXTURE_2D, null);
 		me.gl.bindRenderbuffer(me.gl.RENDERBUFFER, null);
@@ -128,7 +142,7 @@ LightMapDemo.prototype.Load = function (cb) {
 			me.ShaderProgram = me.ShaderProgram.program;
 		}
 
-		me.DepthProgram = new ShaderProgram(me.gl, loadObject.ShaderCode.VSText, loadObject.ShaderCode.DepthFSText);
+		me.DepthProgram = new ShaderProgram(me.gl, loadObject.ShaderCode.DepthVSText, loadObject.ShaderCode.DepthFSText);
 		if (me.DepthProgram.error) {
 			cb(me.DepthProgram.error);
 			return;
@@ -256,9 +270,11 @@ LightMapDemo.prototype.Load = function (cb) {
 			),
 		];
 		me.shadowProjMatrix = mat4.create();
-		me.shadowNearClip = 0.35;
-		me.shadowFarClip = 75.0;
+		me.shadowNearClip = 0.01;
+		me.shadowFarClip = 25.0;
 		mat4.perspective(me.shadowProjMatrix, glMatrix.toRadian(90), 1.0, me.shadowNearClip, me.shadowFarClip);
+
+		me.lightMovementAngle = 0.0;
 
 		cb();
 	});
@@ -380,6 +396,18 @@ LightMapDemo.prototype._Update = function (dt) {
 	if (this.PressedKeys.MovDown && !this.PressedKeys.MovUp) {
 		this.camera.moveUp(-dt / 1000 * moveSpeed);
 	}
+
+	// Slowly rotate the monkey as well :-)
+	mat4.rotateZ(this.MonkeyMesh.world, this.MonkeyMesh.world, dt / 1000 * 2 * Math.PI * 0.245)
+
+	// Slowly move the light back and forth :-D
+	for (var i = 0; i < this.shadowCameras.length; i++) {
+		mat4.getTranslation(this.shadowCameras[i].position, Demo.LightMesh.world);
+	}
+
+	this.lightMovementAngle = (this.lightMovementAngle + dt / 1000 * 2 * Math.PI * 0.04) % (2 * Math.PI);
+	var xcomp = Math.sin(this.lightMovementAngle) * 3.0;
+	Demo.LightMesh.world[12] = xcomp; // CHEATING!!!
 };
 
 LightMapDemo.prototype._RenderShadowMap = function () {
@@ -404,7 +432,7 @@ LightMapDemo.prototype._RenderShadowMap = function () {
 		gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_CUBE_MAP_POSITIVE_X + i, this.shadowMapCube, 0);
 		gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.RENDERBUFFER, this.cubeMapDepthBuffer);
 
-		gl.viewport(0, 0, 1024, 1024);
+		gl.viewport(0, 0, ss, ss);
 		gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
 		// Draw Walls
@@ -412,10 +440,6 @@ LightMapDemo.prototype._RenderShadowMap = function () {
 		gl.uniform4fv(this.DepthProgram.uniforms.meshColor, this.WallsMesh.color);
 		gl.bindBuffer(gl.ARRAY_BUFFER, this.WallsMesh.vbo);
 		gl.vertexAttribPointer(this.DepthProgram.attribs.vPos, 3, gl.FLOAT, gl.FALSE, 0, 0);
-		gl.enableVertexAttribArray(this.DepthProgram.attribs.vPos);
-
-		gl.bindBuffer(gl.ARRAY_BUFFER, this.WallsMesh.nbo);
-		gl.vertexAttribPointer(this.DepthProgram.attribs.vNorm, 3, gl.FLOAT, gl.TRUE, 0, 0);
 		gl.enableVertexAttribArray(this.DepthProgram.attribs.vPos);
 
 		gl.bindBuffer(gl.ARRAY_BUFFER, null);
@@ -431,10 +455,6 @@ LightMapDemo.prototype._RenderShadowMap = function () {
 		gl.vertexAttribPointer(this.DepthProgram.attribs.vPos, 3, gl.FLOAT, gl.FALSE, 0, 0);
 		gl.enableVertexAttribArray(this.DepthProgram.attribs.vPos);
 
-		gl.bindBuffer(gl.ARRAY_BUFFER, this.MonkeyMesh.nbo);
-		gl.vertexAttribPointer(this.DepthProgram.attribs.vNorm, 3, gl.FLOAT, gl.TRUE, 0, 0);
-		gl.enableVertexAttribArray(this.DepthProgram.attribs.vPos);
-
 		gl.bindBuffer(gl.ARRAY_BUFFER, null);
 
 		gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.MonkeyMesh.ibo);
@@ -448,10 +468,6 @@ LightMapDemo.prototype._RenderShadowMap = function () {
 		gl.vertexAttribPointer(this.DepthProgram.attribs.vPos, 3, gl.FLOAT, gl.FALSE, 0, 0);
 		gl.enableVertexAttribArray(this.DepthProgram.attribs.vPos);
 
-		gl.bindBuffer(gl.ARRAY_BUFFER, this.TableMesh.nbo);
-		gl.vertexAttribPointer(this.DepthProgram.attribs.vNorm, 3, gl.FLOAT, gl.TRUE, 0, 0);
-		gl.enableVertexAttribArray(this.DepthProgram.attribs.vPos);
-
 		gl.bindBuffer(gl.ARRAY_BUFFER, null);
 
 		gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.TableMesh.ibo);
@@ -463,10 +479,6 @@ LightMapDemo.prototype._RenderShadowMap = function () {
 		gl.uniform4fv(this.DepthProgram.uniforms.meshColor, this.SofaMesh.color);
 		gl.bindBuffer(gl.ARRAY_BUFFER, this.SofaMesh.vbo);
 		gl.vertexAttribPointer(this.DepthProgram.attribs.vPos, 3, gl.FLOAT, gl.FALSE, 0, 0);
-		gl.enableVertexAttribArray(this.DepthProgram.attribs.vPos);
-
-		gl.bindBuffer(gl.ARRAY_BUFFER, this.SofaMesh.nbo);
-		gl.vertexAttribPointer(this.DepthProgram.attribs.vNorm, 3, gl.FLOAT, gl.TRUE, 0, 0);
 		gl.enableVertexAttribArray(this.DepthProgram.attribs.vPos);
 
 		gl.bindBuffer(gl.ARRAY_BUFFER, null);

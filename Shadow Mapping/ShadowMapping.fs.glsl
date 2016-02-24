@@ -12,17 +12,20 @@ varying vec3 fNorm;
 void main()
 {
 	vec3 dd = (fPos - pointLightPosition);
-	float wsSqMg = dd.x * dd.x + dd.y * dd.y + dd.z * dd.z;
+	float wsSqMg = sqrt(dd.x * dd.x + dd.y * dd.y + dd.z * dd.z);
 	vec3 ds = textureCube(pointShadowTexture, (fPos - pointLightPosition)).rgb;
 	float ssSqMg = ds.r * (shadowClipNearFar.y - shadowClipNearFar.x) + shadowClipNearFar.x;
+	vec3 normLightDir = normalize(pointLightPosition - fPos);
 
 	if (fNorm.x > 777.0) {
 		discard;
 	}
 
-	if ((ssSqMg + 0.1) < wsSqMg) {
-		gl_FragColor = vec4(meshColor.rgb * 0.5, meshColor.a);
-	} else {
-		gl_FragColor = meshColor;
+	float lightIntensity = 0.6;
+
+	if ((ssSqMg + 0.8) > wsSqMg) {
+		lightIntensity = lightIntensity + (1.0 - lightIntensity) * max(dot(fNorm, normLightDir), 0.0);
 	}
+
+	gl_FragColor = vec4(meshColor.rgb * lightIntensity, meshColor.a);
 }
