@@ -11,7 +11,6 @@
     "**/.*",
     "jsdoc-template",
     "spec",
-    "src",
     "tasks",
     "Gemfile",
     "Gemfile.lock",
@@ -24,15 +23,15 @@
     "vector"
   ],
   "license": "MIT",
-  "version": "2.3.1",
-  "_release": "2.3.1",
+  "version": "2.3.2",
+  "_release": "2.3.2",
   "_resolution": {
     "type": "version",
-    "tag": "v2.3.1",
-    "commit": "581123d8834a20ddb76c23a9f5899ae759fa2087"
+    "tag": "v2.3.2",
+    "commit": "b5a732b58d7547f138bb4f3e49d53038e6c0fdab"
   },
   "_source": "git://github.com/toji/gl-matrix.git",
-  "_target": "^2.3.1",
+  "_target": "^2.3.2",
   "_originalSource": "gl-matrix",
   "_direct": true
 }

@@ -14,13 +14,13 @@ function Init() {
 		return;
 	}
 
-	Demo = new LightMapDemo(gl);
-	Demo.Load(function (err) {
-		if (err) {
-			alert('Could not load demo - see console log');
-			console.error('FAILED TO LOAD LightMapDemo!', err);
+	Demo = new LightMapDemoScene(gl);
+	Demo.Load(function (demoLoadError) {
+		if (demoLoadError) {
+			alert('Could not load the demo - see console for more details');
+			console.error(demoLoadError);
 		} else {
 			Demo.Begin();
 		}
 	});
-};
+}
