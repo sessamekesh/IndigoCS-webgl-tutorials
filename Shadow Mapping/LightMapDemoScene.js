@@ -250,7 +250,7 @@ LightMapDemoScene.prototype.Load = function (cb) {
 		mat4.perspective(
 			me.projMatrix,
 			glMatrix.toRadian(90),
-			me.gl.canvas.width / me.gl.canvas.height,
+			me.gl.canvas.clientWidth / me.gl.canvas.clientHeight,
 			0.35,
 			85.0
 		);
@@ -553,7 +553,7 @@ LightMapDemoScene.prototype._Render = function () {
 	gl.enable(gl.CULL_FACE);
 	gl.enable(gl.DEPTH_TEST);
 
-	gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
+	gl.viewport(0, 0, gl.canvas.clientWidth, gl.canvas.clientHeight);
 
 	gl.clearColor(0, 0, 0, 1);
 	gl.clear(gl.DEPTH_BUFFER_BIT | gl.COLOR_BUFFER_BIT);
@@ -632,7 +632,7 @@ LightMapDemoScene.prototype._OnResizeWindow = function () {
 		gl.canvas.style.top = '0px';
 	}
 
-	gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
+	gl.viewport(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight);
 };
 
 LightMapDemoScene.prototype._OnKeyDown = function (e) {
