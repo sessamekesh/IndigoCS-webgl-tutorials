@@ -27,13 +27,11 @@ var fragmentShaderText =
 '}'
 ].join('\n');
 
-var gl;
-
 var InitDemo = function () {
 	console.log('This is working');
 
 	var canvas = document.getElementById('game-surface');
-	gl = canvas.getContext('webgl');
+	var gl = canvas.getContext('webgl');
 
 	if (!gl) {
 		console.log('WebGL not supported, falling back on experimental-webgl');

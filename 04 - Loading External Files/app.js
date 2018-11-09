@@ -1,5 +1,3 @@
-var gl;
-
 var InitDemo = function () {
 	loadTextResource('./shader.vs.glsl', function (vsErr, vsText) {
 		if (vsErr) {
@@ -36,7 +34,7 @@ var RunDemo = function (vertexShaderText, fragmentShaderText, SusanImage, SusanM
 	console.log('This is working');
 
 	var canvas = document.getElementById('game-surface');
-	gl = canvas.getContext('webgl');
+	var gl = canvas.getContext('webgl');
 
 	if (!gl) {
 		console.log('WebGL not supported, falling back on experimental-webgl');

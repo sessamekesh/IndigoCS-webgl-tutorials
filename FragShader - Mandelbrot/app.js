@@ -1,7 +1,5 @@
 'use strict';
 
-var canvas, gl;
-
 function loadShaderAsync(shaderURL, callback) {
 	var req = new XMLHttpRequest();
 	req.open('GET', shaderURL, true);
@@ -52,8 +50,8 @@ function RunDemo(loadErrors, loadedShaders) {
 	AddEvent(window, 'wheel', OnZoom);
 	AddEvent(window, 'mousemove', OnMouseMove);
 
-	canvas = document.getElementById('gl-surface');
-	gl = canvas.getContext('webgl');
+	var canvas = document.getElementById('gl-surface');
+	var gl = canvas.getContext('webgl');
 	if (!gl) {
 		console.log('Webgl context not available - falling back on experimental');
 		gl = canvas.getContext('experimental-webgl');
