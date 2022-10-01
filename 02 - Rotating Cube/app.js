@@ -27,6 +27,53 @@ var fragmentShaderText =
 '}'
 ].join('\n');
 
+var angle = 0;
+var manualPerformance = 0.01;
+var flagAnimation = true;
+
+var stopAnimation = function (){
+	flagAnimation = false;
+	manualPerformance = performance.now() / 1000;
+}
+
+var playAnimation = function (){
+	flagAnimation = true;
+}
+
+var rotateRight = function () {
+	if (!flagAnimation){
+		manualPerformance += 0.04;
+		angle = manualPerformance / 6 * 2 * Math.PI;
+	} else {
+		flagAnimation = false;
+		manualPerformance = performance.now() / 1000;
+	}
+}
+
+var rotateLeft = function () {
+	if(!flagAnimation){
+		manualPerformance -= 0.04;
+		angle = manualPerformance / 6 * 2 * Math.PI;
+	} else {
+		flagAnimation = false;
+		manualPerformance = performance.now() / 1000;
+	}
+}
+
+var pressKey = function (key){
+
+	var tecla = key.which;
+	
+	if(tecla == 97){
+		rotateLeft();
+	}
+
+	if(tecla == 100){
+		rotateRight();
+	}
+
+}
+
 var InitDemo = function () {
 	console.log('This is working');
 
@@ -209,9 +256,10 @@ var InitDemo = function () {
 	//
 	var identityMatrix = new Float32Array(16);
 	mat4.identity(identityMatrix);
-	var angle = 0;
+	angle = 0;
 	var loop = function () {
-		angle = performance.now() / 1000 / 6 * 2 * Math.PI;
+		if (flagAnimation)
+			angle = performance.now() / 1000 / 6 * 2 * Math.PI;
 		mat4.rotate(yRotationMatrix, identityMatrix, angle, [0, 1, 0]);
 		mat4.rotate(xRotationMatrix, identityMatrix, angle / 4, [1, 0, 0]);
 		mat4.mul(worldMatrix, yRotationMatrix, xRotationMatrix);
